@@ -4,7 +4,7 @@ import sqlite3
 app = Flask(__name__)
 
 # データベース接続の設定
-DATABASE = 'db/PublicCompanyList.db'
+DATABASE = 'C:/Users/kh111/Desktop/PythoTest/db/PublicCompanyList.db'
 
 def query_db(query, args=(), one=False):
     con = sqlite3.connect(DATABASE)
