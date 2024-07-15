@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>SQL Practice</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+        }
+        button {
+            display: block;
+            margin-top: 10px;
+        }
+        table {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="my-4">SQL Practice</h1>
+        <div class="form-group">
+            <textarea id="query" class="form-control" placeholder="SQLクエリを入力してください"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="executeQuery()">実行</button>
+        <div id="result"></div>
+    </div>
+
+    <!-- Bootstrap and JQuery JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        async function executeQuery() {
+            const query = document.getElementById('query').value;
+            const response = await fetch('/execute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ query })
+            });
+            const result = await response.json();
+            displayResult(result);
+        }
+
+        function displayResult(data) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+
+            if (data.error) {
+                resultDiv.textContent = 'エラー: ' + data.error;
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.className = 'table table-striped'; // Bootstrapのテーブルクラスを追加
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+
+            // ヘッダーの作成
+            if (data.length > 0) {
+                const headers = Object.keys(data[0]);
+                const headerRow = document.createElement('tr');
+                headers.forEach(header => {
+                    const th = document.createElement('th');
+                    th.textContent = header;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+            }
+
+            // データの作成
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                for (const cell in row) {
+                    const td = document.createElement('td');
+                    td.textContent = row[cell];
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            resultDiv.appendChild(table);
+        }
+    </script>
+</body>
+</html>
