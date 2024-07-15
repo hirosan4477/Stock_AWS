@@ -1,0 +1,2 @@
+・DBUpdateAppはCSVファイルからDBを作ってくれるAP
+・SiteAppのAPはWebサイトのバックエンド用

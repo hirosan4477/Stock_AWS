@@ -28,7 +28,7 @@ def execute():
 
 @app.route('/')
 def index():
-    with open('templates/index.html', encoding='utf-8') as f:
+    with open('C:/Users/kh111/Desktop/PythoTest/templates/index.html', encoding='utf-8') as f:
         return f.read()
 
 if __name__ == '__main__':
