@@ -19,7 +19,9 @@ c.execute(f'DROP TABLE IF EXISTS {table_name}')
 # CSVの列名を取得して新しいテーブルを作成
 columns = df.columns
 column_str = ', '.join([f'"{col}" TEXT' for col in columns])  # 列名をクオートで囲む
-c.execute(f'CREATE TABLE {table_name} ({column_str})')
+create_table_query = f'CREATE TABLE {table_name} ({column_str})'
+print(f"Create Table Query: {create_table_query}")  # デバッグ用出力
+c.execute(create_table_query)
 
 # データフレームをDBに挿入
 df.to_sql(table_name, conn, if_exists='append', index=False)
