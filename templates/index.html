@@ -5,6 +5,7 @@
     <title>上場企業一覧</title>
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <style>
         body {
             padding: 20px;
@@ -32,23 +33,46 @@
         <div id="result"></div>
     </div>
 
-    <!-- Bootstrap and JQuery JS -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <!-- Bootstrap, JQuery and JQuery UI JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
+        async function fetchColumns() {
+            try {
+                const response = await fetch('/columns');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                const columns = await response.json();
+                console.log('Fetched columns:', columns);  // デバッグ用出力
+                return columns;
+            } catch (error) {
+                console.error('There was a problem with the fetch operation:', error);
+                return [];
+            }
+        }
+
         async function executeQuery() {
             const query = document.getElementById('query').value;
-            const response = await fetch('/execute', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ query })
-            });
-            const result = await response.json();
-            displayResult(result);
+            try {
+                const response = await fetch('/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                });
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                const result = await response.json();
+                displayResult(result);
+            } catch (error) {
+                console.error('There was a problem with the fetch operation:', error);
+            }
         }
 
         function displayResult(data) {
@@ -95,6 +119,28 @@
             table.appendChild(tbody);
             resultDiv.appendChild(table);
         }
+
+        $(document).ready(async function() {
+            const sqlKeywords = ["SELECT", "FROM", "WHERE", "INSERT", "UPDATE", "DELETE", "JOIN", "LEFT JOIN", "RIGHT JOIN", "INNER JOIN", "OUTER JOIN", "GROUP BY", "ORDER BY"];
+            const columns = await fetchColumns();
+
+            console.log('SQL Keywords:', sqlKeywords);  // デバッグ用出力
+            console.log('Columns:', columns);  // デバッグ用出力
+
+            $('#query').autocomplete({
+                source: function(request, response) {
+                    const term = request.term.toUpperCase();
+                    const matches = [];
+                    sqlKeywords.concat(columns).forEach(function(item) {
+                        if (item.toUpperCase().indexOf(term) !== -1) {
+                            matches.push(item);
+                        }
+                    });
+                    response(matches);
+                },
+                minLength: 1
+            });
+        });
     </script>
 </body>
 </html>

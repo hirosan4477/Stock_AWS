@@ -48,6 +48,19 @@ def execute():
         print(f"Error: {e}")  # エラーの詳細を出力
         return jsonify({"error": str(e)}), 400
 
+@app.route('/columns', methods=['GET'])
+def get_columns():
+    try:
+        con = sqlite3.connect(DATABASE)
+        con.row_factory = sqlite3.Row
+        cur = con.execute("PRAGMA table_info(list)")  # テーブル名を正しく指定
+        columns = [row['name'] for row in cur.fetchall()]
+        con.close()
+        return jsonify(columns)
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 400
+
 @app.route('/')
 def index():
     with open('C:/Users/kh111/Desktop/PythoTest/templates/index.html', encoding='utf-8') as f:
