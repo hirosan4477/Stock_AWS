@@ -18,8 +18,23 @@
             display: block;
             margin-top: 10px;
         }
-        table {
+        #resultCount {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .table-wrapper {
             margin-top: 20px;
+            max-height: 600px;  /* テーブルの最大高さを調整 */
+            overflow-y: auto;  /* 縦スクロールを有効にする */
+        }
+        table {
+            width: 100%;
+        }
+        thead th {
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 2;
         }
     </style>
 </head>
@@ -30,7 +45,11 @@
             <textarea id="query" class="form-control" placeholder="SQLクエリを入力してください"></textarea>
         </div>
         <button class="btn btn-primary" onclick="executeQuery()">実行</button>
-        <div id="result"></div>
+        <button class="btn btn-secondary" onclick="exportCSV()">CSV出力</button>
+        <div id="resultCount"></div>
+        <div class="table-wrapper">
+            <div id="result"></div>
+        </div>
     </div>
 
     <!-- Bootstrap, JQuery and JQuery UI JS -->
@@ -40,6 +59,8 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
+        let queryResult = [];
+
         async function fetchColumns() {
             try {
                 const response = await fetch('/columns');
@@ -69,6 +90,7 @@
                     throw new Error('Network response was not ok ' + response.statusText);
                 }
                 const result = await response.json();
+                queryResult = result;  // 保存しておく
                 displayResult(result);
             } catch (error) {
                 console.error('There was a problem with the fetch operation:', error);
@@ -77,7 +99,9 @@
 
         function displayResult(data) {
             const resultDiv = document.getElementById('result');
+            const resultCountDiv = document.getElementById('resultCount');
             resultDiv.innerHTML = '';
+            resultCountDiv.innerHTML = '';
 
             if (data.error) {
                 resultDiv.innerHTML = `<div class="alert alert-danger">エラー: ${data.error}</div>`;
@@ -86,8 +110,11 @@
 
             if (data.length === 0) {
                 resultDiv.innerHTML = `<div class="alert alert-warning">結果がありません。</div>`;
+                resultCountDiv.innerHTML = '件数: 0';
                 return;
             }
+
+            resultCountDiv.innerHTML = `件数: ${data.length}`;
 
             const table = document.createElement('table');
             table.className = 'table table-striped table-bordered';
@@ -120,6 +147,30 @@
             resultDiv.appendChild(table);
         }
 
+        async function exportCSV() {
+            if (queryResult.length === 0) {
+                alert('先にSQLを実行してください。');
+                return;
+            }
+
+            try {
+                const response = await fetch('/export_csv', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query: document.getElementById('query').value })
+                });
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                console.error('There was a problem with the fetch operation:', error);
+            }
+        }
+
         $(document).ready(async function() {
             const sqlKeywords = ["SELECT", "FROM", "WHERE", "INSERT", "UPDATE", "DELETE", "JOIN", "LEFT JOIN", "RIGHT JOIN", "INNER JOIN", "OUTER JOIN", "GROUP BY", "ORDER BY"];
             const columns = await fetchColumns();
@@ -129,16 +180,43 @@
 
             $('#query').autocomplete({
                 source: function(request, response) {
-                    const term = request.term.toUpperCase();
+                    const cursorPosition = $('#query')[0].selectionStart;
+                    const textBeforeCursor = request.term.substring(0, cursorPosition);
+                    const lastWord = textBeforeCursor.split(/\s+/).pop().toUpperCase();
+
+                    if (lastWord.length === 0) {
+                        return;
+                    }
+
                     const matches = [];
                     sqlKeywords.concat(columns).forEach(function(item) {
-                        if (item.toUpperCase().indexOf(term) !== -1) {
+                        if (item.toUpperCase().indexOf(lastWord) === 0) {
                             matches.push(item);
                         }
                     });
                     response(matches);
                 },
-                minLength: 1
+                minLength: 1,
+                focus: function(event, ui) {
+                    return false;
+                },
+                select: function(event, ui) {
+                    const cursorPosition = $('#query')[0].selectionStart;
+                    const textBeforeCursor = $('#query').val().substring(0, cursorPosition);
+                    const textAfterCursor = $('#query').val().substring(cursorPosition);
+
+                    const wordsBeforeCursor = textBeforeCursor.split(/\s+/);
+                    wordsBeforeCursor.pop();
+                    wordsBeforeCursor.push(ui.item.value);
+
+                    const newText = wordsBeforeCursor.join(' ') + textAfterCursor;
+
+                    $('#query').val(newText);
+                    const newCursorPosition = cursorPosition + ui.item.value.length - lastWord.length;
+                    $('#query')[0].setSelectionRange(newCursorPosition, newCursorPosition);
+
+                    return false;
+                }
             });
         });
     </script>
