@@ -1,0 +1,27 @@
+async function getData() {
+    const response = await fetch('/data'); // サーバーにアクセスして結果を待つ
+    const json = await response.json();    // レスポンスをJSONとして読み込む
+    console.log(json);
+}
+上記は：
+サーバー /data にアクセス
+結果が返ってくるまで「一時停止」
+データを取得したら json に代入してログ出力
+
+
+try {
+    const result = JSON.parse('{invalid json'); // 間違ったJSON構文
+    console.log(result);
+} catch (e) {
+    console.error('JSONのパースに失敗:', e.message); // ここが実行される
+}
+
+
+-------------------------------------------------------------------------
+fetch('/columns')	GET（省略時のデフォルト）
+fetch('/columns', { method: 'GET' })	GET（明示的に指定）
+fetch('/columns', { method: 'POST' })	POST（指定すれば変更可）
+
+✅ まとめ
+fetch() は何も指定しないと GETリクエストになる
+-------------------------------------------------------------------------

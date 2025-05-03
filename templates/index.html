@@ -61,21 +61,42 @@
 
     <script>
         let queryResult = [];
+        //SQLクエリを実行したときの検索結果（配列）を保存するための空の箱を用意している
 
-        async function fetchColumns() {
-            try {
-                const response = await fetch('/columns');
-                if (!response.ok) {
-                    throw new Error('Network response was not ok ' + response.statusText);
-                }
-                const columns = await response.json();
-                console.log('Fetched columns:', columns);  // デバッグ用出力
-                return columns;
-            } catch (error) {
-                console.error('There was a problem with the fetch operation:', error);
-                return [];
-            }
+        // サーバーからカラム名（列名）の一覧を取得する非同期関数
+// /columns エンドポイントに GET リクエストを送り、JSON を配列として受け取る
+async function fetchColumns() {
+    try {
+        // fetch関数で /columns に HTTP GET リクエストを送信
+        //fetch() は何も指定しないと GETリクエストになる
+        //サーバー処理に書かれてるAPIエンドポイントを実行してる。fetch('http://localhost:5000/columns');
+        //fetch('/columns') は「columnsという情報をください！」というHTTP GETリクエスト。
+        //Flask側で /columns を処理する関数が定義されているので、それが実行されて結果を返します。
+        const response = await fetch('/columns');
+
+        // レスポンスのステータスが 200 番台でない場合はエラーとして扱う
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
         }
+
+        // レスポンスボディを JSON として読み込み、columns に格納
+        // 例: ["企業名", "証券コード", "市場", "業種"]
+        const columns = await response.json();
+
+        // 取得したカラム名の配列を開発者ツールのコンソールに出力（デバッグ用）
+        console.log('Fetched columns:', columns);
+
+        // この関数を呼び出した側に columns を返す（配列）
+        return columns;
+    } catch (error) {
+        // fetch処理中に通信エラーやJSONの読み込みエラーが発生した場合
+        // エラー内容をコンソールに出力し、空の配列を返す
+        console.error('There was a problem with the fetch operation:', error);
+        return [];
+    }
+}
+
+
 
         async function executeQuery() {
             const query = document.getElementById('query').value;
