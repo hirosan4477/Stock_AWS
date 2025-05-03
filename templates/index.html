@@ -46,6 +46,7 @@
         </div>
         <button class="btn btn-primary" onclick="executeQuery()">実行</button>
         <button class="btn btn-secondary" onclick="exportCSV()">CSV出力</button>
+        <button class="btn btn-success" onclick="getStockData()">データ取得</button>
         <div id="resultCount"></div>
         <div class="table-wrapper">
             <div id="result"></div>
@@ -160,6 +161,24 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ query: document.getElementById('query').value })
+                });
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                console.error('There was a problem with the fetch operation:', error);
+            }
+        }
+
+        async function getStockData() {
+            try {
+                const response = await fetch('/get_stock_data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 });
                 if (!response.ok) {
                     throw new Error('Network response was not ok ' + response.statusText);
