@@ -1,33 +1,33 @@
 import pandas as pd
-import sqlite3
+from sqlalchemy import create_engine, text
+import getpass
 
-# CSVファイルとDBファイルのパス
+# CSVファイルパス（必要に応じて変更）
 csv_file = r'C:\Users\kh111\Desktop\PythoTest\CSV\上場企業一覧.csv'
-db_file = r'C:\Users\kh111\Desktop\PythoTest\db\PublicCompanyList.db'
 table_name = 'list'
 
-# CSVファイルを読み込み
+# RDS接続情報
+host = 'stock-db.cxuaca6uq8mz.ap-northeast-1.rds.amazonaws.com'
+port = 3306
+database = 'stockdb'  # ← Workbenchで作成したDB名
+user = 'admin'
+
+# パスワードを安全に取得（入力時に非表示）
+password = getpass.getpass('stock0504!!')
+
+# DBエンジン作成
+engine = create_engine(
+    f'mysql+pymysql://{user}:{password}@{host}:{port}/{database}?charset=utf8mb4'
+)
+
+# CSV読み込み
 df = pd.read_csv(csv_file)
 
-# データベースに接続
-conn = sqlite3.connect(db_file)
-c = conn.cursor()
+# テーブルがあれば削除（エラー修正済み）
+with engine.connect() as conn:
+    conn.execute(text(f'DROP TABLE IF EXISTS `{table_name}`'))
 
-# テーブルが存在する場合は削除
-c.execute(f'DROP TABLE IF EXISTS {table_name}')
+# CSV → RDSへインポート
+df.to_sql(table_name, engine, if_exists='replace', index=False)
 
-# CSVの列名を取得して新しいテーブルを作成
-columns = df.columns
-column_str = ', '.join([f'"{col}" TEXT' for col in columns])  # 列名をクオートで囲む
-create_table_query = f'CREATE TABLE {table_name} ({column_str})'
-print(f"Create Table Query: {create_table_query}")  # デバッグ用出力
-c.execute(create_table_query)
-
-# データフレームをDBに挿入
-df.to_sql(table_name, conn, if_exists='append', index=False)
-
-# コミットして接続を閉じる
-conn.commit()
-conn.close()
-
-print('CSVファイルからデータベースへのインポートが完了しました。')
+print('✅ RDSにCSVデータをインポートしました。')
